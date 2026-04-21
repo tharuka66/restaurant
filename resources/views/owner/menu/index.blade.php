@@ -38,6 +38,7 @@
             <tr>
                 <td>
                     <strong>{{ $item->name }}</strong>
+                    @if($item->is_veg) <span class="badge badge-success" style="font-size:0.6rem;padding:2px 6px;">VEG</span> @else <span class="badge badge-danger" style="font-size:0.6rem;padding:2px 6px;">NON-VEG</span> @endif
                     @if($item->description)<div class="text-muted text-small">{{ Str::limit($item->description, 60) }}</div>@endif
                 </td>
                 <td><strong style="color:var(--primary)">${{ number_format($item->price, 2) }}</strong></td>
@@ -118,6 +119,9 @@
             <div class="form-group" style="display:flex;align-items:center;gap:10px;">
                 <input type="checkbox" name="available" id="available" value="1" checked style="accent-color:var(--primary)">
                 <label for="available" class="form-label" style="margin-bottom:0">Available</label>
+
+                <input type="checkbox" name="is_veg" id="is_veg" value="1" style="accent-color:var(--success);margin-left:15px;">
+                <label for="is_veg" class="form-label" style="margin-bottom:0;color:var(--success);">Vegetarian</label>
             </div>
             <button type="submit" class="btn btn-primary" style="width:100%">Add Item</button>
         </form>
@@ -145,6 +149,9 @@
             <div class="form-group" style="display:flex;align-items:center;gap:10px;">
                 <input type="checkbox" name="available" id="edit-available" value="1" style="accent-color:var(--primary)">
                 <label for="edit-available" class="form-label" style="margin-bottom:0">Available</label>
+
+                <input type="checkbox" name="is_veg" id="edit-is-veg" value="1" style="accent-color:var(--success);margin-left:15px;">
+                <label for="edit-is-veg" class="form-label" style="margin-bottom:0;color:var(--success);">Vegetarian</label>
             </div>
             <button type="submit" class="btn btn-primary" style="width:100%">Save Changes</button>
         </form>
@@ -172,6 +179,7 @@ function editItem(id, item) {
     document.getElementById('edit-price').value = item.price;
     document.getElementById('edit-prep').value = item.prep_time_minutes;
     document.getElementById('edit-available').checked = !!item.available;
+    document.getElementById('edit-is-veg').checked = !!item.is_veg;
     document.getElementById('edit-category-id').value = item.category_id;
     document.getElementById('edit-item-modal').classList.add('open');
 }

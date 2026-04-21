@@ -1,6 +1,14 @@
 @extends('layouts.customer')
 @section('title', 'Order Status')
 
+@push('styles')
+<style>
+.preparing-anim { display:flex; align-items:center; gap:10px; background:rgba(249,115,22,.1); padding:12px; border-radius:8px; border:1px solid rgba(249,115,22,.2); color:var(--primary); font-weight:700; margin-bottom:12px; }
+.bounce { animation:bounce 1s infinite alternate; font-size:1.4rem; }
+@keyframes bounce { 0% { transform: translateY(0); } 100% { transform: translateY(-3px); } }
+</style>
+@endpush
+
 @section('content')
 <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
     <a href="{{ route('customer.menu') }}" style="color:var(--muted);text-decoration:none;"><i class="fas fa-arrow-left"></i></a>
@@ -27,6 +35,13 @@
         </div>
         @endif
 
+        @if($order->status === 'preparing')
+        <div class="preparing-anim">
+            <i class="fas fa-fire bounce"></i>
+            <div>Food is being prepared! We're making it delicious.</div>
+        </div>
+        @endif
+
         {{-- Progress bar --}}
         @php
             $steps = ['pending_approval'=>1,'approved'=>2,'preparing'=>3,'ready'=>4,'completed'=>5];
@@ -37,7 +52,7 @@
             @foreach(['Confirmed','Approved','Preparing','Ready','Done'] as $i=>$label)
             <div style="flex:1;text-align:center;">
                 <div style="height:4px;border-radius:2px;background:{{ ($i+1)<=$current ? 'var(--primary)' : 'var(--dark-3)' }};margin-bottom:4px;"></div>
-                <div style="font-size:.62rem;color:{{ ($i+1)<=$current ? 'var(--primary)' : 'var(--muted)' }}">{{ $label }}</div>
+                <div style="font-size:.62rem;color:{{ ($i+1)<=$current ? (($order->status === 'preparing' && ($i+1)==3) ? 'var(--primary); font-weight:bold; animation:pulse 1s infinite;' : 'var(--primary)') : 'var(--muted)' }}">{{ $label }}</div>
             </div>
             @endforeach
         </div>
@@ -57,9 +72,11 @@
         </div>
 
         @if($order->canBeCancelled())
-        <button class="btn btn-danger btn-full" style="margin-top:12px;font-size:.85rem;" onclick="cancelOrder({{ $order->id }}, this)">
-            <i class="fas fa-times"></i> Cancel Order (within window)
-        </button>
+        <div class="cancel-timer-container" data-order-id="{{ $order->id }}" data-deadline="{{ $order->cancel_deadline->timestamp }}" style="margin-top:12px;">
+            <button class="btn btn-danger btn-full" style="font-size:.85rem;" onclick="cancelOrder({{ $order->id }}, this)">
+                <i class="fas fa-times"></i> Cancel Order (<span class="sec-left">20</span>s)
+            </button>
+        </div>
         @endif
     </div>
 </div>
@@ -86,6 +103,24 @@ async function cancelOrder(orderId, btn) {
     if (data.success) location.reload();
     else { alert(data.error || 'Cannot cancel.'); btn.disabled = false; }
 }
+// Cancel timer logic
+const timers = document.querySelectorAll('.cancel-timer-container');
+setInterval(() => {
+    const now = Math.floor(Date.now() / 1000);
+    timers.forEach(t => {
+        const deadline = parseInt(t.dataset.deadline);
+        let left = deadline - now;
+        if(left < 0) left = 0;
+        const span = t.querySelector('.sec-left');
+        const btn = t.querySelector('.btn-danger');
+        if (span) span.textContent = left;
+        if (left <= 0) {
+            if (btn) btn.disabled = true;
+            t.style.opacity = '0.5';
+        }
+    });
+}, 1000);
+
 // Auto-refresh every 15 seconds
 setTimeout(() => location.reload(), 15000);
 </script>

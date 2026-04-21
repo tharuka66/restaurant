@@ -93,6 +93,7 @@ Route::middleware(['auth'])->group(function () {
 
         Route::middleware('restaurant.active')->group(function () {
             Route::get('/dashboard', [OwnerDashboard::class, 'index'])->name('dashboard');
+            Route::post('/settings', [OwnerDashboard::class, 'updateSettings'])->name('settings.update');
 
             // Menu
             Route::prefix('menu')->name('menu.')->group(function () {

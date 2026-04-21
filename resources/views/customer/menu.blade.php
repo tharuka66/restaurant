@@ -32,6 +32,32 @@
 
 @section('content')
 
+<div class="search-wrap" style="margin-bottom:16px;">
+    <form action="{{ route('customer.menu') }}" method="GET" style="display:flex;gap:8px;">
+        <input type="text" name="q" value="{{ request('q') }}" placeholder="Search foods & beverages..." style="flex:1;padding:12px 16px;border-radius:12px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);outline:none;">
+        <button type="submit" style="padding:12px 18px;border-radius:12px;background:var(--primary);color:white;border:none;cursor:pointer;"><i class="fas fa-search"></i></button>
+    </form>
+</div>
+
+@if($latestItems->count() && !request('q'))
+<h3 style="font-size:1rem;color:var(--primary);margin-bottom:12px;margin-top:20px;">🔥 Latest Additions</h3>
+<div class="cat-tabs" style="margin-bottom:24px;">
+    @foreach($latestItems as $item)
+    <div style="background:var(--surface-2);border:1px solid var(--border);border-radius:12px;padding:12px;min-width:140px;display:inline-block;margin-right:12px;text-align:center;">
+        @if($item->image)
+            <img src="{{ $item->image_url }}" style="width:100%;height:80px;object-fit:cover;border-radius:8px;margin-bottom:8px;">
+        @else
+            <div style="width:100%;height:80px;background:var(--dark-3);border-radius:8px;margin-bottom:8px;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:2rem;"><i class="fas fa-utensils"></i></div>
+        @endif
+        <div style="font-size:.85rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="{{ $item->name }}"><span class="{{ $item->is_veg ? 'text-success' : 'text-danger' }}" style="font-size:0.5rem;vertical-align:middle;margin-right:2px;"><i class="fas fa-circle"></i></span> {{ $item->name }}</div>
+        <div style="font-size:1rem;font-weight:800;color:var(--primary);">${{ number_format($item->price,2) }}</div>
+        <button class="btn btn-primary btn-sm mt-4" style="width:100%;padding:4px 0;font-size:0.75rem;" onclick="changeQty({{ $item->id }}, 1, '{{ addslashes($item->name) }}', {{ $item->price }})">Add</button>
+    </div>
+    @endforeach
+</div>
+@endif
+
+<h3 style="font-size:1rem;color:var(--muted);margin-bottom:12px;">All Foods & Beverages</h3>
 {{-- Category Tabs --}}
 <div class="cat-tabs" id="cat-tabs">
     @foreach($categories as $cat)
@@ -56,7 +82,7 @@
                     @endif
                 </div>
                 <div class="item-info">
-                    <div class="item-name">{{ $item->name }}</div>
+                    <div class="item-name"><span style="color:{{ $item->is_veg ? 'var(--success)' : 'var(--danger)' }};font-size:0.55rem;vertical-align:middle;margin-right:4px;" title="{{ $item->is_veg ? 'Vegetarian' : 'Non-Vegetarian' }}"><i class="fas fa-circle"></i></span> {{ $item->name }}</div>
                     @if($item->description)<div class="item-desc">{{ $item->description }}</div>@endif
                     <div><span class="item-price">${{ number_format($item->price,2) }}</span><span class="item-prep"><i class="fas fa-clock"></i> {{ $item->prep_time_minutes }}m</span></div>
                 </div>
@@ -115,7 +141,28 @@
     </div>
     <div id="cart-items-list"></div>
     <div class="divider" style="border-top:1px solid var(--border);margin:12px 0;"></div>
-    <div style="display:flex;justify-content:space-between;font-weight:800;font-size:1.1rem;margin-bottom:16px;">
+    <div class="divider" style="border-top:1px solid var(--border);margin:12px 0;"></div>
+    
+    <div style="display:flex;justify-content:space-between;font-size:.85rem;color:var(--muted);margin-bottom:6px;"><span>Subtotal</span><span id="cart-subtotal">$0.00</span></div>
+    
+    @if($restaurant->service_charge_percent > 0)
+    <div style="display:flex;justify-content:space-between;font-size:.85rem;color:var(--muted);margin-bottom:6px;"><span>Service Charge ({{ $restaurant->service_charge_percent }}%)</span><span id="cart-service">$0.00</span></div>
+    @endif
+    
+    @if($restaurant->tax_percent > 0)
+    <div style="display:flex;justify-content:space-between;font-size:.85rem;color:var(--muted);margin-bottom:6px;"><span>Tax ({{ $restaurant->tax_percent }}%)</span><span id="cart-tax">$0.00</span></div>
+    @endif
+    
+    @if($restaurant->vat_percent > 0)
+    <div style="display:flex;justify-content:space-between;font-size:.85rem;color:var(--muted);margin-bottom:6px;"><span>VAT ({{ $restaurant->vat_percent }}%)</span><span id="cart-vat">$0.00</span></div>
+    @endif
+
+    @if($restaurant->discount_percent > 0)
+    <div style="display:flex;justify-content:space-between;font-size:.85rem;color:var(--primary);margin-bottom:6px;"><span>Discount ({{ $restaurant->discount_percent }}%)</span><span id="cart-discount">-$0.00</span></div>
+    @endif
+
+    <div class="divider" style="margin:8px 0;"></div>
+    <div style="display:flex;justify-content:space-between;font-weight:800;font-size:1.2rem;margin-bottom:16px;">
         <span>Total</span><span style="color:var(--primary)" id="cart-total">$0.00</span>
     </div>
     <div class="form-group">
@@ -163,7 +210,28 @@ function openCart() {
         html += `<div class="cart-item-row"><span>${item.qty}× ${item.name}</span><span style="color:var(--primary)">$${sub.toFixed(2)}</span></div>`;
     }
     list.innerHTML = html || '<div style="text-align:center;color:var(--muted);padding:20px;">Cart is empty.</div>';
-    document.getElementById('cart-total').textContent = '$' + total.toFixed(2);
+    
+    const scPercent = {{ $restaurant->service_charge_percent ?? 0 }};
+    const taxPercent = {{ $restaurant->tax_percent ?? 0 }};
+    const vatPercent = {{ $restaurant->vat_percent ?? 0 }};
+    const discPercent = {{ $restaurant->discount_percent ?? 0 }};
+    
+    const disc = total * (discPercent / 100);
+    const afterDisc = total - disc;
+    
+    const sc = afterDisc * (scPercent / 100);
+    const tax = afterDisc * (taxPercent / 100);
+    const vat = afterDisc * (vatPercent / 100);
+    
+    const finalTotal = afterDisc + sc + tax + vat;
+    
+    document.getElementById('cart-subtotal').textContent = '$' + total.toFixed(2);
+    if(document.getElementById('cart-service')) document.getElementById('cart-service').textContent = '$' + sc.toFixed(2);
+    if(document.getElementById('cart-tax')) document.getElementById('cart-tax').textContent = '$' + tax.toFixed(2);
+    if(document.getElementById('cart-vat')) document.getElementById('cart-vat').textContent = '$' + vat.toFixed(2);
+    if(document.getElementById('cart-discount')) document.getElementById('cart-discount').textContent = '-$' + disc.toFixed(2);
+    document.getElementById('cart-total').textContent = '$' + finalTotal.toFixed(2);
+
     document.getElementById('cart-drawer').classList.add('open');
     document.getElementById('overlay').classList.add('open');
 }

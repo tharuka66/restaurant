@@ -138,7 +138,15 @@
             <div class="topbar-title">@yield('page-title', 'Dashboard')</div>
             <div class="topbar-subtitle">@yield('page-subtitle', '')</div>
         </div>
-        <div class="flex gap-3">@yield('topbar-actions')</div>
+        <div class="flex gap-3" style="align-items:center;">
+            @if(in_array(auth()->user()->role ?? '', ['owner', 'kitchen']))
+            <a href="#" class="notification-bell" id="global-nav-bell" style="display:none;">
+                <i class="fas fa-bell"></i>
+                <span class="badge" id="global-nav-bell-count">0</span>
+            </a>
+            @endif
+            @yield('topbar-actions')
+        </div>
     </div>
     <div class="page-body">
         @if(session('success'))

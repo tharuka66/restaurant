@@ -42,6 +42,23 @@ class DashboardController extends Controller
         return view('owner.pending', compact('restaurant'));
     }
 
+    public function updateSettings(\Illuminate\Http\Request $request)
+    {
+        $request->validate([
+            'service_charge_percent' => 'numeric|min:0|max:100',
+            'tax_percent' => 'numeric|min:0|max:100',
+            'discount_percent' => 'numeric|min:0|max:100',
+            'vat_percent' => 'numeric|min:0|max:100',
+        ]);
+
+        $restaurant = Auth::user()->ownedRestaurant;
+        $restaurant->update($request->only([
+            'service_charge_percent', 'tax_percent', 'discount_percent', 'vat_percent'
+        ]));
+
+        return back()->with('success', 'Billing settings updated!');
+    }
+
     public function registerRestaurant()
     {
         return view('owner.register-restaurant');

@@ -53,6 +53,7 @@ class MenuController extends Controller
             'price'             => 'required|numeric|min:0',
             'prep_time_minutes' => 'required|integer|min:1',
             'available'         => 'boolean',
+            'is_veg'            => 'boolean',
             'image'             => 'nullable|image|max:2048',
             'sort_order'        => 'integer',
         ]);
@@ -63,6 +64,7 @@ class MenuController extends Controller
 
         $data['restaurant_id'] = $this->restaurant()->id;
         $data['available'] = $request->boolean('available', true);
+        $data['is_veg'] = $request->boolean('is_veg', false);
 
         MenuItem::create($data);
         return back()->with('success', 'Menu item added.');
@@ -78,6 +80,7 @@ class MenuController extends Controller
             'price'             => 'required|numeric|min:0',
             'prep_time_minutes' => 'required|integer|min:1',
             'available'         => 'boolean',
+            'is_veg'            => 'boolean',
             'image'             => 'nullable|image|max:2048',
         ]);
 
@@ -86,6 +89,7 @@ class MenuController extends Controller
             $data['image'] = $request->file('image')->store('menu-items', 'public');
         }
         $data['available'] = $request->boolean('available');
+        $data['is_veg'] = $request->boolean('is_veg');
         $item->update($data);
         return back()->with('success', 'Menu item updated.');
     }

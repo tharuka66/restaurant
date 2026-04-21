@@ -74,6 +74,22 @@
     </div>
 </div>
 
+<div class="card">
+    <div class="card-header"><span class="card-title"><i class="fas fa-cog"></i> Billing Settings</span></div>
+    <div class="card-body">
+        <form method="POST" action="{{ route('owner.settings.update') }}">
+            @csrf
+            <div class="grid-2">
+                <div class="form-group"><label class="form-label">Tax (%)</label><input type="number" step="0.01" name="tax_percent" class="form-control" value="{{ $restaurant->tax_percent }}"></div>
+                <div class="form-group"><label class="form-label">VAT (%)</label><input type="number" step="0.01" name="vat_percent" class="form-control" value="{{ $restaurant->vat_percent }}"></div>
+                <div class="form-group"><label class="form-label">Service Charge (%)</label><input type="number" step="0.01" name="service_charge_percent" class="form-control" value="{{ $restaurant->service_charge_percent }}"></div>
+                <div class="form-group"><label class="form-label">Default Discount (%)</label><input type="number" step="0.01" name="discount_percent" class="form-control" value="{{ $restaurant->discount_percent }}"></div>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Settings</button>
+        </form>
+    </div>
+</div>
+
 @foreach($recentOrders->where('status','pending_approval') as $order)
 <div class="modal-overlay" id="reject-order-{{ $order->id }}">
     <div class="modal">

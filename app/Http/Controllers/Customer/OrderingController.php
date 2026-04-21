@@ -69,7 +69,7 @@ class OrderingController extends Controller
         return redirect()->route('customer.menu');
     }
 
-    public function menu()
+    public function menu(Request $request)
     {
         $sessionId = session('session_id');
         $tableId   = session('table_id');
@@ -80,10 +80,29 @@ class OrderingController extends Controller
 
         $session    = TableSession::with('restaurant.categories.menuItems')->findOrFail($sessionId);
         $restaurant = $session->restaurant;
-        $categories = $restaurant->categories()->with('menuItems')->get();
         $orders     = $session->orders()->with('items.menuItem')->latest()->get();
 
-        return view('customer.menu', compact('session', 'restaurant', 'categories', 'orders'));
+        $search = $request->query('q');
+
+        // Fetch all categories with items, optionally filtered
+        $categoriesQuery = $restaurant->categories()->with(['menuItems' => function($q) use ($search) {
+            $q->where('available', true);
+            if ($search) {
+                $q->where('name', 'like', "%{$search}%");
+            }
+        }]);
+
+        $categories = $categoriesQuery->get();
+
+        // Latest 4 items
+        $latestItems = \App\Models\MenuItem::where('restaurant_id', $restaurant->id)
+            ->where('available', true);
+        if ($search) {
+            $latestItems->where('name', 'like', "%{$search}%");
+        }
+        $latestItems = $latestItems->latest()->take(4)->get();
+
+        return view('customer.menu', compact('session', 'restaurant', 'categories', 'orders', 'latestItems', 'search'));
     }
 
     public function placeOrder(Request $request)
